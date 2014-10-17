@@ -1,0 +1,15 @@
+environment:
+  matrix:
+    - nodejs_version: 0.10.30
+
+install:
+  - ps: Install-Product node $env:nodejs_version $env:Platform
+  - npm install --build-from-source --msvs_version=2013
+  - npm test
+  - node_modules\.bin\node-pre-gyp package
+  - SET CM=%APPVEYOR_REPO_COMMIT_MESSAGE%
+  - if not "%CM%" == "%CM:[publish binary]=%" node_modules\.bin\node-pre-gyp publish
+
+build: OFF
+test: OFF
+deploy: OFF
