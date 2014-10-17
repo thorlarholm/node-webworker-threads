@@ -1,7 +1,7 @@
 {
   'targets': [
     {
-      'target_name': 'WebWorkerThreads',
+      'target_name': '<(module_name)',
       'sources': [ 'src/WebWorkerThreads.cc' ],
       'cflags!': [ '-fno-exceptions', '-DV8_USE_UNSAFE_HANDLES' ],
       'cflags_cc!': [ '-fno-exceptions', '-DV8_USE_UNSAFE_HANDLES' ],
@@ -12,6 +12,17 @@
             'GCC_ENABLE_CPP_EXCEPTIONS': 'YES'
           }
         }]
+      ]
+    },
+    {
+      'target_name': 'action_after_build',
+      'type': 'none',
+      'dependencies': [ '<(module_name)' ],
+      'copies': [
+        {
+          'files': [ '<(PRODUCT_DIR)/<(module_name).node' ],
+          'destination': '<(module_path)'
+        }
       ]
     }
   ]

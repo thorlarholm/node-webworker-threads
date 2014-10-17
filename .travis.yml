@@ -1,0 +1,33 @@
+language: cpp
+
+compiler:
+ - gcc
+
+env:
+  matrix:
+   - NODE_NVM_VERSION="0.10"
+
+before_install:
+# get commit message
+- COMMIT_MESSAGE=$(git show -s --format=%B $TRAVIS_COMMIT | tr -d '\n')
+# put node-pre-gyp on path
+- export PATH=./node_modules/.bin/:$PATH
+
+install:
+# here we set up the node version on the fly based on the matrix value.
+# This is done manually so that it is easy to flip the 'language' to
+# objective-c in another branch (to run the same travis.yml on OS X)
+- git clone https://github.com/creationix/nvm.git ../.nvm
+- source ../.nvm/nvm.sh
+- nvm install $NODE_NVM_VERSION
+- nvm use $NODE_NVM_VERSION
+
+before_script:
+# install from source, ensure this works first
+- npm install --build-from-source
+- npm test
+
+script:
+- node-pre-gyp package
+# now we publish the binary, if requested
+- if test "${COMMIT_MESSAGE#*'[publish binary]'}" != "$COMMIT_MESSAGE"; then node-pre-gyp publish; fi;
