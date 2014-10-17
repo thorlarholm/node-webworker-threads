@@ -25,7 +25,7 @@ install:
 before_script:
 # install from source, ensure this works first
 - npm install --build-from-source
-- for i in $(ls test/test*.js); do node $i; done
+- node test/test00_run_once_and_destroy.js
 
 script:
 - node-pre-gyp package
