@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=640">
+
+    <link rel="stylesheet" href="stylesheets/core.css" media="screen">
+    <link rel="stylesheet" href="stylesheets/mobile.css" media="handheld, only screen and (max-device-width:640px)">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+
+    <script type="text/javascript" src="javascripts/modernizr.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript" src="javascripts/headsmart.min.js"></script>
+    <script type="text/javascript">
+      $(document).ready(function () {
+        $('#main_content').headsmart()
+      })
+    </script>
+    <title>Node-webworker-threads by thorlarholm</title>
+  </head>
+
+  <body>
+    <a id="forkme_banner" href="https://github.com/thorlarholm/node-webworker-threads">View on GitHub</a>
+    <div class="shell">
+
+      <header>
+        <span class="ribbon-outer">
+          <span class="ribbon-inner">
+            <h1>Node-webworker-threads</h1>
+            <h2>Lightweight Web Worker API implementation with native threads</h2>
+          </span>
+          <span class="left-tail"></span>
+          <span class="right-tail"></span>
+        </span>
+      </header>
+
+      <section id="downloads">
+        <span class="inner">
+          <a href="https://github.com/thorlarholm/node-webworker-threads/zipball/master" class="zip"><em>download</em> .ZIP</a><a href="https://github.com/thorlarholm/node-webworker-threads/tarball/master" class="tgz"><em>download</em> .TGZ</a>
+        </span>
+      </section>
+
+
+      <span class="banner-fix"></span>
+
+
+      <section id="main_content">
+        <h1>
+<a id="webworker-threads" class="anchor" href="#webworker-threads" aria-hidden="true"><span class="octicon octicon-link"></span></a>WebWorker Threads</h1>
+
+<p>This is a temporary github page for testing automated builds and deploys of webworker-threads through AppVeyor.</p>
+
+<p>This is based on <a href="https://github.com/xk" class="user-mention">@xk</a> (jorgechamorro)'s <a href="https://github.com/audreyt/node-threads-a-gogo">Threads A GoGo for Node.js</a>, but with an API conforming to the <a href="http://www.w3.org/TR/workers/">Web Worker standard</a>.</p>
+
+<p>This module provides an asynchronous, evented and/or continuation passing style API for moving blocking/longish CPU-bound tasks out of Node's event loop to JavaScript threads that run in parallel in the background and that use all the available CPU cores automatically; all from within a single Node process.</p>
+
+<p>On Unix (including Linux and OS X), this module requires Node.js 0.8.0+ and a working node-gyp toolchain, which in turn requires make and C/C++.
+For example, on OS X, you could install XCode from Apple, and then use it to install the command line tools (under Preferences -&gt; Downloads).</p>
+
+<p>On Windows, this module requires Node.js 0.9.3+ and a working <a href="http://dailyjs.com/2012/05/17/windows-and-node-3/">node-gyp toolchain</a>.</p>
+
+<h2>
+<a id="illustrated-writeup" class="anchor" href="#illustrated-writeup" aria-hidden="true"><span class="octicon octicon-link"></span></a>Illustrated Writeup</h2>
+
+<p>There is an <a href="http://aosabook.org/en/posa/from-socialcalc-to-ethercalc.html#multi-core-scaling">illustrated writeup</a> for the original use case of this module:</p>
+
+<p><img src="http://aosabook.org/en/posa/ethercalc-images/scaling-threads.png" alt="Event Threaded Server (multi-core)" width="100%"></p>
+
+<h2>
+<a id="installing-the-module" class="anchor" href="#installing-the-module" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installing the module</h2>
+
+<p>With <a href="http://npmjs.org/">npm</a>:</p>
+
+<pre><code>npm install webworker-threads
+</code></pre>
+
+<p>Sample usage (adapted from <a href="https://developer.mozilla.org/en-US/docs/DOM/Using_web_workers#Passing_data">MDN</a>):</p>
+
+<div class="highlight highlight-js"><pre><span class="pl-s">var</span> Worker <span class="pl-k">=</span> <span class="pl-s3">require</span>(<span class="pl-s1"><span class="pl-pds">'</span>webworker-threads<span class="pl-pds">'</span></span>).Worker;
+<span class="pl-c">// var w = new Worker('worker.js'); // Standard API</span>
+
+<span class="pl-c">// You may also pass in a function:</span>
+<span class="pl-s">var</span> worker <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-en">Worker</span>(<span class="pl-st">function</span>(){
+  postMessage(<span class="pl-s1"><span class="pl-pds">"</span>I'm working before postMessage('ali').<span class="pl-pds">"</span></span>);
+  <span class="pl-s3">this</span>.<span class="pl-en">onmessage</span> <span class="pl-k">=</span> <span class="pl-st">function</span>(<span class="pl-vpf">event</span>) {
+    postMessage(<span class="pl-s1"><span class="pl-pds">'</span>Hi <span class="pl-pds">'</span></span> <span class="pl-k">+</span> <span class="pl-s3">event</span>.<span class="pl-sc">data</span>);
+    self.<span class="pl-s3">close</span>();
+  };
+});
+<span class="pl-s3">worker</span>.<span class="pl-en">onmessage</span> <span class="pl-k">=</span> <span class="pl-st">function</span>(<span class="pl-vpf">event</span>) {
+  <span class="pl-en">console</span><span class="pl-s3">.log</span>(<span class="pl-s1"><span class="pl-pds">"</span>Worker said : <span class="pl-pds">"</span></span> <span class="pl-k">+</span> <span class="pl-s3">event</span>.<span class="pl-sc">data</span>);
+};
+worker.postMessage(<span class="pl-s1"><span class="pl-pds">'</span>ali<span class="pl-pds">'</span></span>);</pre></div>
+
+<p>A more involved example in <a href="http://livescript.net/">LiveScript</a> syntax, with five threads:</p>
+
+<div class="highlight highlight-coffee"><pre><span class="pl-k">{</span> <span class="pl-v"><span class="pl-v">Worker</span></span> <span class="pl-k">} =</span> <span class="pl-s3">require</span> \webworker<span class="pl-k">-</span>threads
+
+<span class="pl-k">for</span> til <span class="pl-c1">5</span> <span class="pl-st">=&gt;</span> (<span class="pl-k">new</span> <span class="pl-en">Worker</span> <span class="pl-st">-&gt;</span>
+  <span class="pl-en">fibo </span><span class="pl-k">=</span><span class="pl-vpf"> <span class="pl-vpf">(n)</span></span> <span class="pl-st"><span class="pl-st">-&gt;</span></span> <span class="pl-k">if</span> n <span class="pl-k">&gt;</span> <span class="pl-c1">1</span> <span class="pl-k">then</span> fibo(n <span class="pl-k">-</span> <span class="pl-c1">1</span>) <span class="pl-k">+</span> fibo(n <span class="pl-k">-</span> <span class="pl-c1">2</span>) <span class="pl-k">else</span> <span class="pl-c1">1</span>
+  <span class="pl-en">@onmessage </span><span class="pl-k">=</span><span class="pl-vpf"> <span class="pl-vpf">({ data })</span></span> <span class="pl-st"><span class="pl-st">-&gt;</span></span> postMessage fibo data
+)
+  <span class="pl-k">..</span>onmessage <span class="pl-k">=</span> <span class="pl-vpf">({ data })</span> <span class="pl-st">-&gt;</span>
+    <span class="pl-en">console</span>.<span class="pl-s3">log</span> <span class="pl-s1"><span class="pl-pds">"</span>[<span class="pl-s2"><span class="pl-pse">#{</span> <span class="pl-vo">@thread</span>.id <span class="pl-pse">}</span></span>] #data<span class="pl-pds">"</span></span>
+    <span class="pl-vo">@postMessage</span> <span class="pl-s3">Math</span>.<span class="pl-s3">ceil</span> <span class="pl-s3">Math</span>.<span class="pl-s3">random</span><span class="pl-k">!</span> <span class="pl-k">*</span> <span class="pl-c1">30</span>
+  <span class="pl-k">..</span>postMessage <span class="pl-s3">Math</span>.<span class="pl-s3">ceil</span> <span class="pl-s3">Math</span>.<span class="pl-s3">random</span><span class="pl-k">!</span> <span class="pl-k">*</span> <span class="pl-c1">30</span>
+
+<span class="pl-k">do</span> <span class="pl-en">spin </span><span class="pl-k">=</span> <span class="pl-st"><span class="pl-st">-&gt;</span></span> <span class="pl-sv">process</span>.nextTick spin</pre></div>
+
+<h2>
+<a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span class="octicon octicon-link"></span></a>Introduction</h2>
+
+<p>After the initialization phase of a Node program, whose purpose is to setup listeners and callbacks to be executed in response to events, the next phase, the proper execution of the program, is orchestrated by the event loop whose duty is to <a href="http://youtube.com/v/D0uA_NOb0PE?autoplay=1">juggle events, listeners and callbacks quickly and without any hiccups nor interruptions that would ruin its performance</a></p>
+
+<p>Both the event loop and said listeners and callbacks run sequentially in a single thread of execution, Node's main thread. If any of them ever blocks, nothing else will happen for the duration of the block: no more events will be handled, no more callbacks nor listeners nor timeouts nor nextTick()ed functions will have the chance to run and do their job, because they won't be called by the blocked event loop, and the program will turn sluggish at best, or appear to be frozen and dead at worst.</p>
+
+<h3>
+<a id="what-is-webworker-threads" class="anchor" href="#what-is-webworker-threads" aria-hidden="true"><span class="octicon octicon-link"></span></a>What is WebWorker-Threads</h3>
+
+<p><code>webworker-threads</code> provides an asynchronous API for CPU-bound tasks that's missing in Node.js:</p>
+
+<div class="highlight highlight-javascript"><pre><span class="pl-s">var</span> Worker <span class="pl-k">=</span> <span class="pl-s3">require</span>(<span class="pl-s1"><span class="pl-pds">'</span>webworker-threads<span class="pl-pds">'</span></span>).Worker;
+<span class="pl-s3">require</span>(<span class="pl-s1"><span class="pl-pds">'</span>http<span class="pl-pds">'</span></span>).createServer(<span class="pl-st">function</span> (<span class="pl-vpf">req</span>,<span class="pl-vpf">res</span>) {
+  <span class="pl-s">var</span> fibo <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-en">Worker</span>(<span class="pl-st">function</span>() {
+    <span class="pl-st">function</span> <span class="pl-en">fibo</span> (<span class="pl-vpf">n</span>) {
+      <span class="pl-k">return</span> n <span class="pl-k">&gt;</span> <span class="pl-c1">1</span> <span class="pl-k">?</span> fibo(n <span class="pl-k">-</span> <span class="pl-c1">1</span>) <span class="pl-k">+</span> fibo(n <span class="pl-k">-</span> <span class="pl-c1">2</span>) <span class="pl-k">:</span> <span class="pl-c1">1</span>;
+    }
+    <span class="pl-s3">this</span>.<span class="pl-en">onmessage</span> <span class="pl-k">=</span> <span class="pl-st">function</span> (<span class="pl-vpf">event</span>) {
+      postMessage(fibo(<span class="pl-s3">event</span>.<span class="pl-sc">data</span>));
+    }
+  });
+  <span class="pl-s3">fibo</span>.<span class="pl-en">onmessage</span> <span class="pl-k">=</span> <span class="pl-st">function</span> (<span class="pl-vpf">event</span>) {
+    res.end(<span class="pl-s1"><span class="pl-pds">'</span>fib(40) = <span class="pl-pds">'</span></span> <span class="pl-k">+</span> <span class="pl-s3">event</span>.<span class="pl-sc">data</span>);
+  };
+  fibo.postMessage(<span class="pl-c1">40</span>);
+}).listen(port);</pre></div>
+
+<p>And it won't block the event loop because for each request, the <code>fibo</code> worker will run in parallel in a separate background thread.</p>
+
+<h2>
+<a id="api" class="anchor" href="#api" aria-hidden="true"><span class="octicon octicon-link"></span></a>API</h2>
+
+<h3>
+<a id="module-api" class="anchor" href="#module-api" aria-hidden="true"><span class="octicon octicon-link"></span></a>Module API</h3>
+
+<div class="highlight highlight-javascript"><pre><span class="pl-s">var</span> Threads<span class="pl-k">=</span> <span class="pl-s3">require</span>(<span class="pl-s1"><span class="pl-pds">'</span>webworker-threads<span class="pl-pds">'</span></span>);</pre></div>
+
+<h5>
+<a id="worker" class="anchor" href="#worker" aria-hidden="true"><span class="octicon octicon-link"></span></a>.Worker</h5>
+
+<p><code>new Threads.Worker( [ file | function ] )</code> returns a Worker object.</p>
+
+<h5>
+<a id="create" class="anchor" href="#create" aria-hidden="true"><span class="octicon octicon-link"></span></a>.create()</h5>
+
+<p><code>Threads.create( /* no arguments */ )</code> returns a thread object.</p>
+
+<h5>
+<a id="createpool-numthreads-" class="anchor" href="#createpool-numthreads-" aria-hidden="true"><span class="octicon octicon-link"></span></a>.createPool( numThreads )</h5>
+
+<p><code>Threads.createPool( numberOfThreads )</code> returns a threadPool object.</p>
+
+<hr>
+
+<h3>
+<a id="web-worker-api" class="anchor" href="#web-worker-api" aria-hidden="true"><span class="octicon octicon-link"></span></a>Web Worker API</h3>
+
+<div class="highlight highlight-javascript"><pre><span class="pl-s">var</span> worker<span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-en">Threads.Worker</span>(<span class="pl-s1"><span class="pl-pds">'</span>worker.js<span class="pl-pds">'</span></span>);
+<span class="pl-s">var</span> worker<span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-en">Threads.Worker</span>(<span class="pl-st">function</span>(){ ... });
+<span class="pl-s">var</span> worker<span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-en">Threads.Worker</span>();</pre></div>
+
+<h5>
+<a id="postmessage-data-" class="anchor" href="#postmessage-data-" aria-hidden="true"><span class="octicon octicon-link"></span></a>.postMessage( data )</h5>
+
+<p><code>worker.postMessage({ x: 1, y: 2 })</code> sends a data structure into the worker. The worker can receive it using the <code>onmessage</code> handler.</p>
+
+<h5>
+<a id="onmessage" class="anchor" href="#onmessage" aria-hidden="true"><span class="octicon octicon-link"></span></a>.onmessage</h5>
+
+<p><code>worker.onmessage = function (event) { console.log(event.data) };</code> receives data from the worker's <code>postMessage</code> calls.</p>
+
+<h5>
+<a id="terminate" class="anchor" href="#terminate" aria-hidden="true"><span class="octicon octicon-link"></span></a>.terminate()</h5>
+
+<p><code>worker.terminate()</code> terminates the worker thread.</p>
+
+<h5>
+<a id="addeventlistener-type-cb-" class="anchor" href="#addeventlistener-type-cb-" aria-hidden="true"><span class="octicon octicon-link"></span></a>.addEventListener( type, cb )</h5>
+
+<p><code>worker.addEventListener('message', callback)</code> is equivalent to setting <code>worker.onmesssage = callback</code>.</p>
+
+<h5>
+<a id="dispatchevent-event-" class="anchor" href="#dispatchevent-event-" aria-hidden="true"><span class="octicon octicon-link"></span></a>.dispatchEvent( event )</h5>
+
+<p>Currently unimplemented.</p>
+
+<h5>
+<a id="removeeventlistener-type-" class="anchor" href="#removeeventlistener-type-" aria-hidden="true"><span class="octicon octicon-link"></span></a>.removeEventListener( type )</h5>
+
+<p>Currently unimplemented.</p>
+
+<h5>
+<a id="thread" class="anchor" href="#thread" aria-hidden="true"><span class="octicon octicon-link"></span></a>.thread</h5>
+
+<p>Returns the underlying <code>thread</code> object; see the next section for details.
+Note that this attribute is implementation-specific, and not part of W3C Web Worker API.</p>
+
+<hr>
+
+<h3>
+<a id="thread-api" class="anchor" href="#thread-api" aria-hidden="true"><span class="octicon octicon-link"></span></a>Thread API</h3>
+
+<div class="highlight highlight-javascript"><pre><span class="pl-s">var</span> thread<span class="pl-k">=</span> Threads.create();</pre></div>
+
+<h5>
+<a id="id" class="anchor" href="#id" aria-hidden="true"><span class="octicon octicon-link"></span></a>.id</h5>
+
+<p><code>thread.id</code> is a sequential thread serial number.</p>
+
+<h5>
+<a id="load-absolutepath--cb-" class="anchor" href="#load-absolutepath--cb-" aria-hidden="true"><span class="octicon octicon-link"></span></a>.load( absolutePath [, cb] )</h5>
+
+<p><code>thread.load( absolutePath [, cb] )</code> reads the file at <code>absolutePath</code> and <code>thread.eval(fileContents, cb)</code>.</p>
+
+<h5>
+<a id="eval-program--cb" class="anchor" href="#eval-program--cb" aria-hidden="true"><span class="octicon octicon-link"></span></a>.eval( program [, cb])</h5>
+
+<p><code>thread.eval( program [, cb])</code> converts <code>program.toString()</code> and eval()s it in the thread's global context, and (if provided) returns the completion value to <code>cb(err, completionValue)</code>.</p>
+
+<h5>
+<a id="on-eventtype-listener-" class="anchor" href="#on-eventtype-listener-" aria-hidden="true"><span class="octicon octicon-link"></span></a>.on( eventType, listener )</h5>
+
+<p><code>thread.on( eventType, listener )</code> registers the listener <code>listener(data)</code> for any events of <code>eventType</code> that the thread <code>thread</code> may emit.</p>
+
+<h5>
+<a id="once-eventtype-listener-" class="anchor" href="#once-eventtype-listener-" aria-hidden="true"><span class="octicon octicon-link"></span></a>.once( eventType, listener )</h5>
+
+<p><code>thread.once( eventType, listener )</code> is like <code>thread.on()</code>, but the listener will only be called once.</p>
+
+<h5>
+<a id="removealllisteners-eventtype-" class="anchor" href="#removealllisteners-eventtype-" aria-hidden="true"><span class="octicon octicon-link"></span></a>.removeAllListeners( [eventType] )</h5>
+
+<p><code>thread.removeAllListeners( [eventType] )</code> deletes all listeners for all eventTypes. If <code>eventType</code> is provided, deletes all listeners only for the event type <code>eventType</code>.</p>
+
+<h5>
+<a id="emit-eventtype-eventdata--eventdata---" class="anchor" href="#emit-eventtype-eventdata--eventdata---" aria-hidden="true"><span class="octicon octicon-link"></span></a>.emit( eventType, eventData [, eventData ... ] )</h5>
+
+<p><code>thread.emit( eventType, eventData [, eventData ... ] )</code> emits an event of <code>eventType</code> with <code>eventData</code> inside the thread <code>thread</code>. All its arguments are .toString()ed.</p>
+
+<h5>
+<a id="destroy--no-arguments--" class="anchor" href="#destroy--no-arguments--" aria-hidden="true"><span class="octicon octicon-link"></span></a>.destroy( /* no arguments */ )</h5>
+
+<p><code>thread.destroy( /* no arguments */ )</code> destroys the thread.</p>
+
+<hr>
+
+<h3>
+<a id="thread-pool-api" class="anchor" href="#thread-pool-api" aria-hidden="true"><span class="octicon octicon-link"></span></a>Thread pool API</h3>
+
+<div class="highlight highlight-javascript"><pre>threadPool<span class="pl-k">=</span> Threads.createPool( numberOfThreads );</pre></div>
+
+<h5>
+<a id="load-absolutepath--cb--1" class="anchor" href="#load-absolutepath--cb--1" aria-hidden="true"><span class="octicon octicon-link"></span></a>.load( absolutePath [, cb] )</h5>
+
+<p><code>threadPool.load( absolutePath [, cb] )</code> runs <code>thread.load( absolutePath [, cb] )</code> in all the pool's threads.</p>
+
+<h5>
+<a id="anyeval-program-cb-" class="anchor" href="#anyeval-program-cb-" aria-hidden="true"><span class="octicon octicon-link"></span></a>.any.eval( program, cb )</h5>
+
+<p><code>threadPool.any.eval( program, cb )</code> is like <code>thread.eval()</code>, but in any of the pool's threads.</p>
+
+<h5>
+<a id="anyemit-eventtype-eventdata--eventdata---" class="anchor" href="#anyemit-eventtype-eventdata--eventdata---" aria-hidden="true"><span class="octicon octicon-link"></span></a>.any.emit( eventType, eventData [, eventData ... ] )</h5>
+
+<p><code>threadPool.any.emit( eventType, eventData [, eventData ... ] )</code> is like <code>thread.emit()</code>, but in any of the pool's threads.</p>
+
+<h5>
+<a id="alleval-program-cb-" class="anchor" href="#alleval-program-cb-" aria-hidden="true"><span class="octicon octicon-link"></span></a>.all.eval( program, cb )</h5>
+
+<p><code>threadPool.all.eval( program, cb )</code> is like <code>thread.eval()</code>, but in all the pool's threads.</p>
+
+<h5>
+<a id="allemit-eventtype-eventdata--eventdata---" class="anchor" href="#allemit-eventtype-eventdata--eventdata---" aria-hidden="true"><span class="octicon octicon-link"></span></a>.all.emit( eventType, eventData [, eventData ... ] )</h5>
+
+<p><code>threadPool.all.emit( eventType, eventData [, eventData ... ] )</code> is like <code>thread.emit()</code>, but in all the pool's threads.</p>
+
+<h5>
+<a id="on-eventtype-listener--1" class="anchor" href="#on-eventtype-listener--1" aria-hidden="true"><span class="octicon octicon-link"></span></a>.on( eventType, listener )</h5>
+
+<p><code>threadPool.on( eventType, listener )</code> is like <code>thread.on()</code>, registers listeners for events from any of the threads in the pool.</p>
+
+<h5>
+<a id="totalthreads" class="anchor" href="#totalthreads" aria-hidden="true"><span class="octicon octicon-link"></span></a>.totalThreads()</h5>
+
+<p><code>threadPool.totalThreads()</code> returns the number of threads in this pool: as supplied in <code>.createPool( number )</code></p>
+
+<h5>
+<a id="idlethreads" class="anchor" href="#idlethreads" aria-hidden="true"><span class="octicon octicon-link"></span></a>.idleThreads()</h5>
+
+<p><code>threadPool.idleThreads()</code> returns the number of threads in this pool that are currently idle (sleeping)</p>
+
+<h5>
+<a id="pendingjobs" class="anchor" href="#pendingjobs" aria-hidden="true"><span class="octicon octicon-link"></span></a>.pendingJobs()</h5>
+
+<p><code>threadPool.pendingJobs()</code> returns the number of jobs pending.</p>
+
+<h5>
+<a id="destroy--rudely--" class="anchor" href="#destroy--rudely--" aria-hidden="true"><span class="octicon octicon-link"></span></a>.destroy( [ rudely ] )</h5>
+
+<p><code>threadPool.destroy( [ rudely ] )</code> waits until <code>pendingJobs()</code> is zero and then destroys the pool. If <code>rudely</code> is truthy, then it doesn't wait for <code>pendingJobs === 0</code>.</p>
+
+<hr>
+
+<h3>
+<a id="global-web-worker-api" class="anchor" href="#global-web-worker-api" aria-hidden="true"><span class="octicon octicon-link"></span></a>Global Web Worker API</h3>
+
+<p>Inside every Worker instance from webworker-threads, there's a global <code>self</code> object with these properties:</p>
+
+<h5>
+<a id="postmessage-data--1" class="anchor" href="#postmessage-data--1" aria-hidden="true"><span class="octicon octicon-link"></span></a>.postMessage( data )</h5>
+
+<p><code>postMessage({ x: 1, y: 2 })</code> sends a data structure back to the main thread.</p>
+
+<h5>
+<a id="onmessage-1" class="anchor" href="#onmessage-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>.onmessage</h5>
+
+<p><code>onmessage = function (event) { ... }</code> receives data from the main thread's <code>.postMessage</code> calls.</p>
+
+<h5>
+<a id="close" class="anchor" href="#close" aria-hidden="true"><span class="octicon octicon-link"></span></a>.close()</h5>
+
+<p><code>close()</code> stops the current thread.</p>
+
+<h5>
+<a id="addeventlistener-type-cb--1" class="anchor" href="#addeventlistener-type-cb--1" aria-hidden="true"><span class="octicon octicon-link"></span></a>.addEventListener( type, cb )</h5>
+
+<p><code>addEventListener('message', callback)</code> is equivalent to setting <code>self.onmesssage = callback</code>.</p>
+
+<h5>
+<a id="dispatchevent-event--1" class="anchor" href="#dispatchevent-event--1" aria-hidden="true"><span class="octicon octicon-link"></span></a>.dispatchEvent( event )</h5>
+
+<p><code>dispatchEvent({ type: 'message', data: data })</code> is the same as <code>self.postMessage(data)</code>.</p>
+
+<h5>
+<a id="removeeventlistener-type--1" class="anchor" href="#removeeventlistener-type--1" aria-hidden="true"><span class="octicon octicon-link"></span></a>.removeEventListener( type )</h5>
+
+<p>Currently unimplemented.</p>
+
+<h5>
+<a id="importscripts-file--file-" class="anchor" href="#importscripts-file--file-" aria-hidden="true"><span class="octicon octicon-link"></span></a>.importScripts( file [, file...] )</h5>
+
+<p><code>importScripts('a.js', 'b.js')</code> loads one or more files from the disk and <code>eval()</code> them in the worker's instance scope.</p>
+
+<h5>
+<a id="thread-1" class="anchor" href="#thread-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>.thread</h5>
+
+<p>The underlying <code>thread</code> object; see the next section for details.
+Note that this attribute is implementation-specific, and not part of W3C Web Worker API.</p>
+
+<hr>
+
+<h3>
+<a id="global-thread-api" class="anchor" href="#global-thread-api" aria-hidden="true"><span class="octicon octicon-link"></span></a>Global Thread API</h3>
+
+<p>Inside every thread .create()d by webworker-threads, there's a global <code>thread</code> object with these properties:</p>
+
+<h5>
+<a id="id-1" class="anchor" href="#id-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>.id</h5>
+
+<p><code>thread.id</code> is the serial number of this thread</p>
+
+<h5>
+<a id="on-eventtype-listener--2" class="anchor" href="#on-eventtype-listener--2" aria-hidden="true"><span class="octicon octicon-link"></span></a>.on( eventType, listener )</h5>
+
+<p><code>thread.on( eventType, listener )</code> is just like <code>thread.on()</code> above.</p>
+
+<h5>
+<a id="once-eventtype-listener--1" class="anchor" href="#once-eventtype-listener--1" aria-hidden="true"><span class="octicon octicon-link"></span></a>.once( eventType, listener )</h5>
+
+<p><code>thread.once( eventType, listener )</code> is just like <code>thread.once()</code> above.</p>
+
+<h5>
+<a id="emit-eventtype-eventdata--eventdata----1" class="anchor" href="#emit-eventtype-eventdata--eventdata----1" aria-hidden="true"><span class="octicon octicon-link"></span></a>.emit( eventType, eventData [, eventData ... ] )</h5>
+
+<p><code>thread.emit( eventType, eventData [, eventData ... ] )</code> is just like <code>thread.emit()</code> above.</p>
+
+<h5>
+<a id="removealllisteners-eventtype--1" class="anchor" href="#removealllisteners-eventtype--1" aria-hidden="true"><span class="octicon octicon-link"></span></a>.removeAllListeners( [eventType] )</h5>
+
+<p><code>thread.removeAllListeners( [eventType] )</code> is just like <code>thread.removeAllListeners()</code> above.</p>
+
+<h5>
+<a id="nexttick-function-" class="anchor" href="#nexttick-function-" aria-hidden="true"><span class="octicon octicon-link"></span></a>.nextTick( function )</h5>
+
+<p><code>thread.nextTick( function )</code> is like <code>process.nextTick()</code>, but much faster.</p>
+
+<hr>
+
+<h3>
+<a id="global-helper-api" class="anchor" href="#global-helper-api" aria-hidden="true"><span class="octicon octicon-link"></span></a>Global Helper API</h3>
+
+<p>Inside every thread .create()d by webworker-threads, there are some helpers:</p>
+
+<h5>
+<a id="consolelogarg1--arg2-" class="anchor" href="#consolelogarg1--arg2-" aria-hidden="true"><span class="octicon octicon-link"></span></a>console.log(arg1 [, arg2 ...])</h5>
+
+<p>Same as <code>console.log</code> on the main process.</p>
+
+<h5>
+<a id="consoleerrorarg1--arg2-" class="anchor" href="#consoleerrorarg1--arg2-" aria-hidden="true"><span class="octicon octicon-link"></span></a>console.error(arg1 [, arg2 ...])</h5>
+
+<p>Same as <code>console.log</code>, except it prints to stderr.</p>
+
+<h5>
+<a id="putsarg1--arg2-" class="anchor" href="#putsarg1--arg2-" aria-hidden="true"><span class="octicon octicon-link"></span></a>puts(arg1 [, arg2 ...])</h5>
+
+<p><code>puts(arg1 [, arg2 ...])</code> converts .toString()s and prints its arguments to stdout.</p>
+
+<hr>
+
+<h2>
+<a id="wip-wip-wip" class="anchor" href="#wip-wip-wip" aria-hidden="true"><span class="octicon octicon-link"></span></a>WIP WIP WIP</h2>
+
+<h2>
+<a id="note-that-everything-below-this-line-is-under-construction-and-subject-to-change" class="anchor" href="#note-that-everything-below-this-line-is-under-construction-and-subject-to-change" aria-hidden="true"><span class="octicon octicon-link"></span></a>Note that everything below this line is under construction and subject to change.</h2>
+
+<h2>
+<a id="examples" class="anchor" href="#examples" aria-hidden="true"><span class="octicon octicon-link"></span></a>Examples</h2>
+
+<p><strong>A.-</strong> Here's a program that makes Node's event loop spin freely and as fast as possible: it simply prints a dot to the console in each turn:</p>
+
+<pre><code>cat examples/quickIntro_loop.js
+</code></pre>
+
+<div class="highlight highlight-javascript"><pre>(<span class="pl-st">function</span> <span class="pl-en">spinForever</span> () {
+  <span class="pl-sv">process</span>.nextTick(spinForever);
+})();</pre></div>
+
+<p><strong>B.-</strong> Here's another program that adds to the one above a fibonacci(35) call in each turn, a CPU-bound task that takes quite a while to complete and that blocks the event loop making it spin slowly and clumsily. The point is simply to show that you can't put a job like that in the event loop because Node will stop performing properly when its event loop can't spin fast and freely due to a callback/listener/nextTick()ed function that's blocking.</p>
+
+<pre><code>cat examples/quickIntro_blocking.js
+</code></pre>
+
+<div class="highlight highlight-javascript"><pre><span class="pl-st">function</span> <span class="pl-en">fibo</span> (<span class="pl-vpf">n</span>) {
+  <span class="pl-k">return</span> n <span class="pl-k">&gt;</span> <span class="pl-c1">1</span> <span class="pl-k">?</span> fibo(n <span class="pl-k">-</span> <span class="pl-c1">1</span>) <span class="pl-k">+</span> fibo(n <span class="pl-k">-</span> <span class="pl-c1">2</span>) <span class="pl-k">:</span> <span class="pl-c1">1</span>;
+}
+
+(<span class="pl-st">function</span> <span class="pl-en">fiboLoop</span> () {
+  <span class="pl-sv">process</span>.stdout.<span class="pl-s3">write</span>(fibo(<span class="pl-c1">35</span>).<span class="pl-s3">toString</span>());
+  <span class="pl-sv">process</span>.nextTick(fiboLoop);
+})();
+
+(<span class="pl-st">function</span> <span class="pl-en">spinForever</span> () {
+  <span class="pl-sv">process</span>.nextTick(spinForever);
+})();</pre></div>
+
+<p><strong>C.-</strong> The program below uses <code>webworker-threads</code> to run the fibonacci(35) calls in a background thread, so Node's event loop isn't blocked at all and can spin freely again at full speed:</p>
+
+<pre><code>cat examples/quickIntro_oneThread.js
+</code></pre>
+
+<div class="highlight highlight-javascript"><pre><span class="pl-st">function</span> <span class="pl-en">fibo</span> (<span class="pl-vpf">n</span>) {
+  <span class="pl-k">return</span> n <span class="pl-k">&gt;</span> <span class="pl-c1">1</span> <span class="pl-k">?</span> fibo(n <span class="pl-k">-</span> <span class="pl-c1">1</span>) <span class="pl-k">+</span> fibo(n <span class="pl-k">-</span> <span class="pl-c1">2</span>) <span class="pl-k">:</span> <span class="pl-c1">1</span>;
+}
+
+<span class="pl-st">function</span> <span class="pl-en">cb</span> (<span class="pl-vpf">err</span>, <span class="pl-vpf">data</span>) {
+  <span class="pl-sv">process</span>.stdout.<span class="pl-s3">write</span>(data);
+  <span class="pl-v">this</span>.<span class="pl-s3">eval</span>(<span class="pl-s1"><span class="pl-pds">'</span>fibo(35)<span class="pl-pds">'</span></span>, cb);
+}
+
+<span class="pl-s">var</span> thread<span class="pl-k">=</span> <span class="pl-s3">require</span>(<span class="pl-s1"><span class="pl-pds">'</span>webworker-threads<span class="pl-pds">'</span></span>).create();
+
+thread.<span class="pl-s3">eval</span>(fibo).<span class="pl-s3">eval</span>(<span class="pl-s1"><span class="pl-pds">'</span>fibo(35)<span class="pl-pds">'</span></span>, cb);
+
+(<span class="pl-st">function</span> <span class="pl-en">spinForever</span> () {
+  <span class="pl-sv">process</span>.nextTick(spinForever);
+})();</pre></div>
+
+<p><strong>D.-</strong> This example is almost identical to the one above, only that it creates 5 threads instead of one, each running a fibonacci(35) in parallel and in parallel too with Node's event loop that keeps spinning happily at full speed in its own thread:</p>
+
+<pre><code>cat examples/quickIntro_fiveThreads.js
+</code></pre>
+
+<div class="highlight highlight-javascript"><pre><span class="pl-st">function</span> <span class="pl-en">fibo</span> (<span class="pl-vpf">n</span>) {
+  <span class="pl-k">return</span> n <span class="pl-k">&gt;</span> <span class="pl-c1">1</span> <span class="pl-k">?</span> fibo(n <span class="pl-k">-</span> <span class="pl-c1">1</span>) <span class="pl-k">+</span> fibo(n <span class="pl-k">-</span> <span class="pl-c1">2</span>) <span class="pl-k">:</span> <span class="pl-c1">1</span>;
+}
+
+<span class="pl-st">function</span> <span class="pl-en">cb</span> (<span class="pl-vpf">err</span>, <span class="pl-vpf">data</span>) {
+  <span class="pl-sv">process</span>.stdout.<span class="pl-s3">write</span>(<span class="pl-s1"><span class="pl-pds">"</span> [<span class="pl-pds">"</span></span><span class="pl-k">+</span> <span class="pl-v">this</span>.<span class="pl-sc">id</span><span class="pl-k">+</span> <span class="pl-s1"><span class="pl-pds">"</span>]<span class="pl-pds">"</span></span><span class="pl-k">+</span> data);
+  <span class="pl-v">this</span>.<span class="pl-s3">eval</span>(<span class="pl-s1"><span class="pl-pds">'</span>fibo(35)<span class="pl-pds">'</span></span>, cb);
+}
+
+<span class="pl-s">var</span> Threads<span class="pl-k">=</span> <span class="pl-s3">require</span>(<span class="pl-s1"><span class="pl-pds">'</span>webworker-threads<span class="pl-pds">'</span></span>);
+
+Threads.create().<span class="pl-s3">eval</span>(fibo).<span class="pl-s3">eval</span>(<span class="pl-s1"><span class="pl-pds">'</span>fibo(35)<span class="pl-pds">'</span></span>, cb);
+Threads.create().<span class="pl-s3">eval</span>(fibo).<span class="pl-s3">eval</span>(<span class="pl-s1"><span class="pl-pds">'</span>fibo(35)<span class="pl-pds">'</span></span>, cb);
+Threads.create().<span class="pl-s3">eval</span>(fibo).<span class="pl-s3">eval</span>(<span class="pl-s1"><span class="pl-pds">'</span>fibo(35)<span class="pl-pds">'</span></span>, cb);
+Threads.create().<span class="pl-s3">eval</span>(fibo).<span class="pl-s3">eval</span>(<span class="pl-s1"><span class="pl-pds">'</span>fibo(35)<span class="pl-pds">'</span></span>, cb);
+Threads.create().<span class="pl-s3">eval</span>(fibo).<span class="pl-s3">eval</span>(<span class="pl-s1"><span class="pl-pds">'</span>fibo(35)<span class="pl-pds">'</span></span>, cb);
+
+(<span class="pl-st">function</span> <span class="pl-en">spinForever</span> () {
+  <span class="pl-sv">process</span>.nextTick(spinForever);
+})();</pre></div>
+
+<p><strong>E.-</strong> The next one asks <code>webworker-threads</code> to create a pool of 10 background threads, instead of creating them manually one by one:</p>
+
+<pre><code>cat examples/multiThread.js
+</code></pre>
+
+<div class="highlight highlight-javascript"><pre><span class="pl-st">function</span> <span class="pl-en">fibo</span> (<span class="pl-vpf">n</span>) {
+  <span class="pl-k">return</span> n <span class="pl-k">&gt;</span> <span class="pl-c1">1</span> <span class="pl-k">?</span> fibo(n <span class="pl-k">-</span> <span class="pl-c1">1</span>) <span class="pl-k">+</span> fibo(n <span class="pl-k">-</span> <span class="pl-c1">2</span>) <span class="pl-k">:</span> <span class="pl-c1">1</span>;
+}
+
+<span class="pl-s">var</span> numThreads<span class="pl-k">=</span> <span class="pl-c1">10</span>;
+<span class="pl-s">var</span> threadPool<span class="pl-k">=</span> <span class="pl-s3">require</span>(<span class="pl-s1"><span class="pl-pds">'</span>webworker-threads<span class="pl-pds">'</span></span>).createPool(numThreads).<span class="pl-sc">all</span>.<span class="pl-s3">eval</span>(fibo);
+
+threadPool.<span class="pl-sc">all</span>.<span class="pl-s3">eval</span>(<span class="pl-s1"><span class="pl-pds">'</span>fibo(35)<span class="pl-pds">'</span></span>, <span class="pl-st">function</span> <span class="pl-en">cb</span> (<span class="pl-vpf">err</span>, <span class="pl-vpf">data</span>) {
+  <span class="pl-sv">process</span>.stdout.<span class="pl-s3">write</span>(<span class="pl-s1"><span class="pl-pds">"</span> [<span class="pl-pds">"</span></span><span class="pl-k">+</span> <span class="pl-v">this</span>.<span class="pl-sc">id</span><span class="pl-k">+</span> <span class="pl-s1"><span class="pl-pds">"</span>]<span class="pl-pds">"</span></span><span class="pl-k">+</span> data);
+  <span class="pl-v">this</span>.<span class="pl-s3">eval</span>(<span class="pl-s1"><span class="pl-pds">'</span>fibo(35)<span class="pl-pds">'</span></span>, cb);
+});
+
+(<span class="pl-st">function</span> <span class="pl-en">spinForever</span> () {
+  <span class="pl-sv">process</span>.nextTick(spinForever);
+})();</pre></div>
+
+<p><strong>F.-</strong> This is a demo of the <code>webworker-threads</code> eventEmitter API, using one thread:</p>
+
+<pre><code>cat examples/quickIntro_oneThreadEvented.js
+</code></pre>
+
+<div class="highlight highlight-javascript"><pre><span class="pl-s">var</span> thread<span class="pl-k">=</span> <span class="pl-s3">require</span>(<span class="pl-s1"><span class="pl-pds">'</span>webworker-threads<span class="pl-pds">'</span></span>).create();
+thread.<span class="pl-s3">load</span>(<span class="pl-sv">__dirname</span> <span class="pl-k">+</span> <span class="pl-s1"><span class="pl-pds">'</span>/quickIntro_evented_childThreadCode.js<span class="pl-pds">'</span></span>);
+
+<span class="pl-c">/*</span>
+<span class="pl-c">  This is the code that's .load()ed into the child/background thread:</span>
+<span class="pl-c"></span>
+<span class="pl-c">  function fibo (n) {</span>
+<span class="pl-c">    return n &gt; 1 ? fibo(n - 1) + fibo(n - 2) : 1;</span>
+<span class="pl-c">  }</span>
+<span class="pl-c"></span>
+<span class="pl-c">  thread.on('giveMeTheFibo', function onGiveMeTheFibo (data) {</span>
+<span class="pl-c">    this.emit('theFiboIs', fibo(+data)); //Emits 'theFiboIs' in the parent/main thread.</span>
+<span class="pl-c">  });</span>
+<span class="pl-c"></span>
+<span class="pl-c">*/</span>
+
+<span class="pl-c">//Emit 'giveMeTheFibo' in the child/background thread.</span>
+thread.emit(<span class="pl-s1"><span class="pl-pds">'</span>giveMeTheFibo<span class="pl-pds">'</span></span>, <span class="pl-c1">35</span>);
+
+<span class="pl-c">//Listener for the 'theFiboIs' events emitted by the child/background thread.</span>
+thread.on(<span class="pl-s1"><span class="pl-pds">'</span>theFiboIs<span class="pl-pds">'</span></span>, <span class="pl-st">function</span> <span class="pl-en">cb</span> (<span class="pl-vpf">data</span>) {
+  <span class="pl-sv">process</span>.stdout.<span class="pl-s3">write</span>(data);
+  <span class="pl-v">this</span>.emit(<span class="pl-s1"><span class="pl-pds">'</span>giveMeTheFibo<span class="pl-pds">'</span></span>, <span class="pl-c1">35</span>);
+});
+
+(<span class="pl-st">function</span> <span class="pl-en">spinForever</span> () {
+  <span class="pl-sv">process</span>.nextTick(spinForever);
+})();</pre></div>
+
+<p><strong>G.-</strong> This is a demo of the <code>webworker-threads</code> eventEmitter API, using a pool of threads:</p>
+
+<pre><code>cat examples/quickIntro_multiThreadEvented.js
+</code></pre>
+
+<div class="highlight highlight-javascript"><pre><span class="pl-s">var</span> numThreads<span class="pl-k">=</span> <span class="pl-c1">10</span>;
+<span class="pl-s">var</span> threadPool<span class="pl-k">=</span> <span class="pl-s3">require</span>(<span class="pl-s1"><span class="pl-pds">'</span>webworker-threads<span class="pl-pds">'</span></span>).createPool(numThreads);
+threadPool.<span class="pl-s3">load</span>(<span class="pl-sv">__dirname</span> <span class="pl-k">+</span> <span class="pl-s1"><span class="pl-pds">'</span>/quickIntro_evented_childThreadCode.js<span class="pl-pds">'</span></span>);
+
+<span class="pl-c">/*</span>
+<span class="pl-c">  This is the code that's .load()ed into the child/background threads:</span>
+<span class="pl-c"></span>
+<span class="pl-c">  function fibo (n) {</span>
+<span class="pl-c">    return n &gt; 1 ? fibo(n - 1) + fibo(n - 2) : 1;</span>
+<span class="pl-c">  }</span>
+<span class="pl-c"></span>
+<span class="pl-c">  thread.on('giveMeTheFibo', function onGiveMeTheFibo (data) {</span>
+<span class="pl-c">    this.emit('theFiboIs', fibo(+data)); //Emits 'theFiboIs' in the parent/main thread.</span>
+<span class="pl-c">  });</span>
+<span class="pl-c"></span>
+<span class="pl-c">*/</span>
+
+<span class="pl-c">//Emit 'giveMeTheFibo' in all the child/background threads.</span>
+threadPool.<span class="pl-sc">all</span>.emit(<span class="pl-s1"><span class="pl-pds">'</span>giveMeTheFibo<span class="pl-pds">'</span></span>, <span class="pl-c1">35</span>);
+
+<span class="pl-c">//Listener for the 'theFiboIs' events emitted by the child/background threads.</span>
+threadPool.on(<span class="pl-s1"><span class="pl-pds">'</span>theFiboIs<span class="pl-pds">'</span></span>, <span class="pl-st">function</span> <span class="pl-en">cb</span> (<span class="pl-vpf">data</span>) {
+  <span class="pl-sv">process</span>.stdout.<span class="pl-s3">write</span>(<span class="pl-s1"><span class="pl-pds">"</span> [<span class="pl-pds">"</span></span><span class="pl-k">+</span> <span class="pl-v">this</span>.<span class="pl-sc">id</span><span class="pl-k">+</span> <span class="pl-s1"><span class="pl-pds">"</span>]<span class="pl-pds">"</span></span><span class="pl-k">+</span> data);
+  <span class="pl-v">this</span>.emit(<span class="pl-s1"><span class="pl-pds">'</span>giveMeTheFibo<span class="pl-pds">'</span></span>, <span class="pl-c1">35</span>);
+});
+
+(<span class="pl-st">function</span> <span class="pl-en">spinForever</span> () {
+  <span class="pl-sv">process</span>.nextTick(spinForever);
+})();</pre></div>
+
+<h2>
+<a id="more-examples" class="anchor" href="#more-examples" aria-hidden="true"><span class="octicon octicon-link"></span></a>More examples</h2>
+
+<p>The <code>examples</code> directory contains a few more examples:</p>
+
+<ul>
+<li>
+<a href="https://github.com/xk/node-threads-a-gogo/blob/master/examples/ex01_basic.md">ex01_basic</a>: Running a simple function in a thread.</li>
+<li>
+<a href="https://github.com/xk/node-threads-a-gogo/blob/master/examples/ex02_events.md">ex02_events</a>: Sending events from a worker thread.</li>
+<li>
+<a href="https://github.com/xk/node-threads-a-gogo/blob/master/examples/ex03_ping_pong.md">ex03_ping_pong</a>: Sending events both ways between the main thread and a worker thread.</li>
+<li>
+<a href="https://github.com/xk/node-threads-a-gogo/blob/master/examples/ex04_main.md">ex04_main</a>: Loading the worker code from a file.</li>
+<li>
+<a href="https://github.com/xk/node-threads-a-gogo/blob/master/examples/ex05_pool.md">ex05_pool</a>: Using the thread pool.</li>
+<li>
+<a href="https://github.com/xk/node-threads-a-gogo/blob/master/examples/ex06_jason.md">ex06_jason</a>: Passing complex objects to threads.</li>
+</ul>
+
+<h2>
+<a id="rationale" class="anchor" href="#rationale" aria-hidden="true"><span class="octicon octicon-link"></span></a>Rationale</h2>
+
+<p><a href="http://nodejs.org">Node.js</a> is the most awesome, cute and super-sexy piece of free, open source software.</p>
+
+<p>Its event loop can spin as fast and smooth as a turbo, and roughly speaking, <strong>the faster it spins, the more power it delivers</strong>. That's why <a href="http://twitter.com/ryah">@ryah</a> took great care to ensure that no -possibly slow- I/O operations could ever block it: a pool of background threads (thanks to <a href="http://software.schmorp.de/pkg/libeio.html">Marc Lehmann's libeio library</a>) handle any blocking I/O calls in the background, in parallel.</p>
+
+<p>In Node it's verboten to write a server like this:</p>
+
+<div class="highlight highlight-javascript"><pre>http.createServer(<span class="pl-st">function</span> (<span class="pl-vpf">req</span>,<span class="pl-vpf">res</span>) {
+  res.end( fs.readFileSync(path) );
+}).listen(port);</pre></div>
+
+<p>Because synchronous I/O calls <strong>block the turbo</strong>, and without proper boost, Node.js begins to stutter and behaves clumsily. To avoid it there's the asynchronous version of <code>.readFile()</code>, in continuation passing style, that takes a callback:</p>
+
+<div class="highlight highlight-javascript"><pre>fs.readfile(path, <span class="pl-st">function</span> <span class="pl-en">cb</span> (<span class="pl-vpf">err</span>, <span class="pl-vpf">data</span>) { <span class="pl-c">/* ... */</span> });</pre></div>
+
+<p>It's cool, we love it (*), and there's hundreds of ad hoc built-in functions like this in Node to help us deal with almost any variety of possibly slow, blocking I/O.</p>
+
+<h3>
+<a id="but-whats-with-longish-cpu-bound-tasks" class="anchor" href="#but-whats-with-longish-cpu-bound-tasks" aria-hidden="true"><span class="octicon octicon-link"></span></a>But what's with longish, CPU-bound tasks?</h3>
+
+<p>How do you avoid blocking the event loop, when the task at hand isn't I/O bound, and lasts more than a few fractions of a millisecond?</p>
+
+<div class="highlight highlight-javascript"><pre>http.createServer(<span class="pl-st">function</span> <span class="pl-en">cb</span> (<span class="pl-vpf">req</span>,<span class="pl-vpf">res</span>) {
+  res.end( fibonacci(<span class="pl-c1">40</span>) );
+}).listen(port);</pre></div>
+
+<p>You simply can't, because there's no way... well, there wasn't before <code>webworker-threads</code>.</p>
+
+<h3>
+<a id="why-threads" class="anchor" href="#why-threads" aria-hidden="true"><span class="octicon octicon-link"></span></a>Why Threads</h3>
+
+<p>Threads (kernel threads) are very interesting creatures. They provide:</p>
+
+<p>1.- Parallelism: All the threads run in parallel. On a single core processor, the CPU is switched rapidly back and forth among the threads providing the illusion that the threads are running in parallel, albeit on a slower CPU than the real one. With 10 compute-bound threads in a process, the threads would appear to be running in parallel, each one on a CPU with 1/10th the speed of the real CPU. On a multi-core processor, threads are truly running in parallel, and get time-sliced when the number of threads exceed the number of cores. So with 12 compute bound threads on a quad-core processor each thread will appear to run at 1/3rd of the nominal core speed.</p>
+
+<p>2.- Fairness: No thread is more important than another, cores and CPU slices are fairly distributed among threads by the OS scheduler.</p>
+
+<p>3.- Threads fully exploit all the available CPU resources in your system. On a loaded system running many tasks in many threads, the more cores there are, the faster the threads will complete. Automatically.</p>
+
+<p>4.- The threads of a process share exactly the same address space, that of the process they belong to. Every thread can access every memory address within the process' address space. This is a very appropriate setup when the threads are actually part of the same job and are actively and closely cooperating with each other. Passing a reference to a chunk of data via a pointer is many orders of magnitude faster than transferring a copy of the data via IPC.</p>
+
+<h3>
+<a id="why-not-multiple-processes" class="anchor" href="#why-not-multiple-processes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Why not multiple processes.</h3>
+
+<p>The "can't block the event loop" problem is inherent to Node's evented model. No matter how many Node processes you have running as a <a href="http://blog.nodejs.org/2011/10/04/an-easy-way-to-build-scalable-network-programs/">Node-cluster</a>, it won't solve its issues with CPU-bound tasks.</p>
+
+<p>Launch a cluster of N Nodes running the example B (<code>quickIntro_blocking.js</code>) above, and all you'll get is N -instead of one- Nodes with their event loops blocked and showing a sluggish performance.</p>
+      </section>
+
+      <footer>
+        <span class="ribbon-outer">
+          <span class="ribbon-inner">
+            <p>this project by <a href="https://github.com/thorlarholm">thorlarholm</a> can be found on <a href="https://github.com/thorlarholm/node-webworker-threads">GitHub</a></p>
+          </span>
+          <span class="left-tail"></span>
+          <span class="right-tail"></span>
+        </span>
+        <p>Generated with <a href="http://pages.github.com">GitHub Pages</a> using Merlot</p>
+        <span class="octocat"></span>
+      </footer>
+
+    </div>
+
+    
+  </body>
+</html>
